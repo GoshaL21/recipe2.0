@@ -2,7 +2,7 @@
 
 import React from 'react';
 
-interface Recipe {
+type Recipe = {
     name: string;
     ingredients: {
         provided: string[];
@@ -12,7 +12,7 @@ interface Recipe {
     cookingTime: string;
 }
 
-interface RecipeCardProps {
+type RecipeCardProps = {
     recipe: Recipe;
 }
 

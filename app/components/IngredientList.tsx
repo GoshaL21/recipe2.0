@@ -2,7 +2,7 @@
 
 import React from 'react';
 
-interface IngredientListProps {
+type IngredientListProps = {
     ingredients: string[];
     onRemoveIngredient: (index: number) => void;
 }

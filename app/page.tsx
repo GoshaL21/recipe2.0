@@ -4,7 +4,7 @@ import React, {useState} from 'react';
 import IngredientList from './components/IngredientList';
 import RecipeCard from './components/RecipeCard';
 
-interface Recipe {
+type Recipe = {
     name: string;
     ingredients: {
         provided: string[];
