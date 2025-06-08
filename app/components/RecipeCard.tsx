@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 
 type Recipe = {
     name: string;
@@ -10,15 +10,31 @@ type Recipe = {
     };
     instructions: string;
     cookingTime: string;
-}
+    cost: number;
+    nutrition: {
+        calories: number;
+        protein: number;
+        fat: number;
+        carbs: number;
+    };
+};
 
 type RecipeCardProps = {
     recipe: Recipe;
-}
+};
 
-const RecipeCard: React.FC<RecipeCardProps> = ({recipe}) => {
+const RecipeCard: React.FC<RecipeCardProps> = ({ recipe }) => {
+    const [showToast, setShowToast] = useState(false);
+
+    const handleShare = () => {
+        const url = `${window.location.origin}/share?data=${encodeURIComponent(JSON.stringify(recipe))}`;
+        navigator.clipboard.writeText(url);
+        setShowToast(true);
+        setTimeout(() => setShowToast(false), 2000);
+    };
+
     return (
-        <div className="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow duration-300">
+        <div className="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow duration-300 relative flex flex-col h-full">
             <h3 className="text-2xl font-semibold text-gray-800 mb-4">{recipe.name}</h3>
 
             <div className="mb-6">
@@ -50,11 +66,33 @@ const RecipeCard: React.FC<RecipeCardProps> = ({recipe}) => {
                 <p className="text-gray-600 whitespace-pre-line">{recipe.instructions}</p>
             </div>
 
-            <div className="text-gray-500 text-sm">
+            <div className="text-gray-500 text-sm mb-2">
                 <span>Cooking time: {recipe.cookingTime}</span>
+            </div>
+            <div className="text-gray-700 text-sm mb-2">
+                <span>Estimated cost: ${recipe.cost?.toFixed(2)}</span>
+            </div>
+            <div className="text-gray-700 text-xs mb-4">
+                <span>
+                    Nutrition: {recipe.nutrition?.calories} kcal, {recipe.nutrition?.protein}g protein, {recipe.nutrition?.fat}g fat, {recipe.nutrition?.carbs}g carbs
+                </span>
+            </div>
+
+            <div className="mt-auto flex items-center justify-end gap-2">
+                <button
+                    onClick={handleShare}
+                    className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition"
+                >
+                    Share
+                </button>
+                {showToast && (
+                    <div className="bg-green-500 text-white px-3 py-1 rounded shadow text-sm z-10 ml-2">
+                        Link copied!
+                    </div>
+                )}
             </div>
         </div>
     );
 };
 
-export default RecipeCard; 
+export default RecipeCard;

@@ -12,6 +12,31 @@ type Recipe = {
     };
     instructions: string;
     cookingTime: string;
+    cost: number;
+    nutrition: {
+        calories: number;
+        protein: number;
+        fat: number;
+        carbs: number;
+    };
+};
+
+// Basic list of common food ingredients
+const COMMON_INGREDIENTS = [
+    "egg", "cheese", "milk", "chicken", "beef", "rice", "tomato", "onion", "garlic", "potato", "carrot",
+    "pepper", "salt", "oil", "butter", "flour", "sugar", "bread", "pasta", "beans", "lettuce", "spinach",
+    "fish", "apple", "banana", "lemon", "lime", "yogurt", "cream", "mushroom", "corn", "peas", "broccoli",
+    "cucumber", "zucchini", "avocado", "bacon", "ham", "turkey", "shrimp", "salmon", "tuna",
+    "cabbage", "celery", "chili", "ginger", "cilantro", "basil", "oregano", "parsley", "thyme", "rosemary",
+    "cinnamon", "nutmeg", "paprika", "cumin", "coriander", "mustard", "soy sauce", "vinegar", "honey", "ketchup",
+    "mayonnaise", "peanut butter", "jam", "chocolate", "nuts", "almonds", "walnuts", "cashews", "oats", "quinoa",
+    "barley", "lentils", "coconut", "raisins", "vanilla", "maple syrup", "cream cheese", "mozzarella", "parmesan"
+];
+
+function isValidIngredient(ingredient: string) {
+    return COMMON_INGREDIENTS.some(food =>
+        ingredient.toLowerCase().includes(food)
+    );
 }
 
 export default function Home() {
@@ -22,13 +47,13 @@ export default function Home() {
     const [error, setError] = useState<string | null>(null);
     const [cookingLevel, setCookingLevel] = useState<string>('intermediate');
     const [maxPrepTime, setMaxPrepTime] = useState<number>(60);
+    const [maxBudget, setMaxBudget] = useState<number>(50);
 
     const handleAddIngredient = (e: React.FormEvent) => {
         e.preventDefault();
         if (newIngredient.trim()) {
             setIngredients([...ingredients, newIngredient.trim()]);
             setNewIngredient('');
-            // Clear previous results when adding new ingredients
             setRecipes([]);
             setError(null);
         }
@@ -36,7 +61,6 @@ export default function Home() {
 
     const handleRemoveIngredient = (index: number) => {
         setIngredients(ingredients.filter((_, i) => i !== index));
-        // Clear previous results when removing ingredients
         setRecipes([]);
         setError(null);
     };
@@ -45,6 +69,14 @@ export default function Home() {
         setIsLoading(true);
         setError(null);
         setRecipes([]);
+
+        // Validate all ingredients
+        const invalids = ingredients.filter(i => !isValidIngredient(i));
+        if (invalids.length > 0) {
+            setIsLoading(false);
+            setError(`Invalid ingredient(s): ${invalids.join(", ")}. Please enter only real food ingredients.`);
+            return;
+        }
 
         try {
             const response = await fetch('/api/recipes', {
@@ -55,7 +87,8 @@ export default function Home() {
                 body: JSON.stringify({
                     ingredients,
                     cookingLevel,
-                    maxPrepTime
+                    maxPrepTime,
+                    maxBudget
                 }),
             });
 
@@ -74,7 +107,7 @@ export default function Home() {
 
     return (
         <main className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 pb-12">
-            <div className="max-w-4xl mx-auto p-8">
+            <div className="max-w-2xl mx-auto">
                 <h1 className="text-5xl font-bold text-center mb-4 text-gray-800 tracking-tight">
                     Recipe Finder
                 </h1>
@@ -131,8 +164,28 @@ export default function Home() {
                                 <input
                                     type="number"
                                     id="maxPrepTime"
-                                    value={maxPrepTime}
-                                    onChange={(e) => setMaxPrepTime(Math.max(0, parseInt(e.target.value)))}
+                                    value={Number.isNaN(maxPrepTime) ? '' : maxPrepTime}
+                                    onChange={e => {
+                                        const val = e.target.value;
+                                        setMaxPrepTime(val === '' ? 0 : Math.max(0, parseInt(val, 10) || 0));
+                                    }}
+                                    min="0"
+                                    className="w-full p-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                                />
+                            </div>
+
+                            <div>
+                                <label htmlFor="maxBudget" className="block text-sm font-medium text-gray-700 mb-2">
+                                    Maximum Budget (USD)
+                                </label>
+                                <input
+                                    type="number"
+                                    id="maxBudget"
+                                    value={Number.isNaN(maxBudget) ? '' : maxBudget}
+                                    onChange={e => {
+                                        const val = e.target.value;
+                                        setMaxBudget(val === '' ? 0 : Math.max(0, parseFloat(val) || 0));
+                                    }}
                                     min="0"
                                     className="w-full p-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                                 />
@@ -172,20 +225,22 @@ export default function Home() {
 
                 {isLoading && <p>Loading recipes...</p>}
                 {error && <p className="text-red-500">{error}</p>}
+            </div>
 
-                {recipes.length > 0 && (
-                    <div className="mt-8">
-                        <h2 className="text-3xl font-bold mb-4 text-gray-800 tracking-tight">
-                            Recipes
-                        </h2>
-                        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                            {recipes.map((recipe, index) => (
+            {recipes.length > 0 && (
+                <div className="max-w-5xl mx-auto mt-8">
+                    <h2 className="text-3xl font-bold mb-4 text-gray-800 tracking-tight text-center">
+                        Recipes
+                    </h2>
+                    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                        {recipes
+                            .filter(recipe => recipe.cost <= maxBudget)
+                            .map((recipe, index) => (
                                 <RecipeCard key={index} recipe={recipe}/>
                             ))}
-                        </div>
                     </div>
-                )}
-            </div>
+                </div>
+            )}
         </main>
     );
-} 
+}
