@@ -27,3 +27,4 @@ build/
 
 # deployment
 .vercel/
+/app/generated/prisma

@@ -27,7 +27,7 @@ export default function SignUp() {
     return capital && number && special;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
@@ -41,10 +41,30 @@ export default function SignUp() {
       return;
     }
 
-    // Simulate sign-up (replace with API call if needed)
-    console.log('Signing up with:', form);
+    try {
+      const res = await fetch('/api/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username: form.email,
+          password: form.password,
+          name: form.name,
+          surname: form.surname,
+        }),
+      });
 
-    router.push('/dashboard');
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.message || 'Registration failed');
+        return;
+      }
+
+      // Registration successful, redirect to login
+      router.push('/login');
+    } catch (err) {
+      setError('Something went wrong. Please try again.');
+    }
   };
 
   return (
