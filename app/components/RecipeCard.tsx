@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, {useState} from 'react';
 
 type Recipe = {
     name: string;
@@ -23,7 +23,7 @@ type RecipeCardProps = {
     recipe: Recipe;
 };
 
-const RecipeCard: React.FC<RecipeCardProps> = ({ recipe }) => {
+const RecipeCard: React.FC<RecipeCardProps> = ({recipe}) => {
     const [showToast, setShowToast] = useState(false);
 
     const handleShare = () => {
@@ -34,7 +34,8 @@ const RecipeCard: React.FC<RecipeCardProps> = ({ recipe }) => {
     };
 
     return (
-        <div className="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow duration-300 relative flex flex-col h-full">
+        <div
+            className="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow duration-300 relative flex flex-col h-full">
             <h3 className="text-2xl font-semibold text-gray-800 mb-4">{recipe.name}</h3>
 
             <div className="mb-6">

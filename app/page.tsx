@@ -3,7 +3,7 @@
 import React, {useState} from 'react';
 import IngredientList from './components/IngredientList';
 import RecipeCard from './components/RecipeCard';
-import { useRouter } from 'next/navigation';
+import {useRouter} from 'next/navigation';
 
 type Recipe = {
     name: string;
@@ -22,23 +22,22 @@ type Recipe = {
     };
 };
 
-// Basic list of common food ingredients
-const COMMON_INGREDIENTS = [
-    "egg", "cheese", "milk", "chicken", "beef", "rice", "tomato", "onion", "garlic", "potato", "carrot",
-    "pepper", "salt", "oil", "butter", "flour", "sugar", "bread", "pasta", "beans", "lettuce", "spinach",
-    "fish", "apple", "banana", "lemon", "lime", "yogurt", "cream", "mushroom", "corn", "peas", "broccoli",
-    "cucumber", "zucchini", "avocado", "bacon", "ham", "turkey", "shrimp", "salmon", "tuna",
-    "cabbage", "celery", "chili", "ginger", "cilantro", "basil", "oregano", "parsley", "thyme", "rosemary",
-    "cinnamon", "nutmeg", "paprika", "cumin", "coriander", "mustard", "soy sauce", "vinegar", "honey", "ketchup",
-    "mayonnaise", "peanut butter", "jam", "chocolate", "nuts", "almonds", "walnuts", "cashews", "oats", "quinoa",
-    "barley", "lentils", "coconut", "raisins", "vanilla", "maple syrup", "cream cheese", "mozzarella", "parmesan"
-];
-
-function isValidIngredient(ingredient: string) {
-    return COMMON_INGREDIENTS.some(food =>
-        ingredient.toLowerCase().includes(food)
-    );
-}
+// const COMMON_INGREDIENTS = [
+//     "egg", "cheese", "milk", "chicken", "beef", "rice", "tomato", "onion", "garlic", "potato", "carrot",
+//     "pepper", "salt", "oil", "butter", "flour", "sugar", "bread", "pasta", "beans", "lettuce", "spinach",
+//     "fish", "apple", "banana", "lemon", "lime", "yogurt", "cream", "mushroom", "corn", "peas", "broccoli",
+//     "cucumber", "zucchini", "avocado", "bacon", "ham", "turkey", "shrimp", "salmon", "tuna",
+//     "cabbage", "celery", "chili", "ginger", "cilantro", "basil", "oregano", "parsley", "thyme", "rosemary",
+//     "cinnamon", "nutmeg", "paprika", "cumin", "coriander", "mustard", "soy sauce", "vinegar", "honey", "ketchup",
+//     "mayonnaise", "peanut butter", "jam", "chocolate", "nuts", "almonds", "walnuts", "cashews", "oats", "quinoa",
+//     "barley", "lentils", "coconut", "raisins", "vanilla", "maple syrup", "cream cheese", "mozzarella", "parmesan"
+// ];
+//
+// function isValidIngredient(ingredient: string) {
+//     return COMMON_INGREDIENTS.some(
+//         food => food.toLowerCase() === ingredient.trim().toLowerCase()
+//     );
+// }
 
 export default function Home() {
     const [ingredients, setIngredients] = useState<string[]>([]);
@@ -64,7 +63,7 @@ export default function Home() {
         setIngredients(ingredients.filter((_, i) => i !== index));
         setRecipes([]);
         setError(null);
-    }
+    };
 
     const router = useRouter();
 
@@ -72,14 +71,6 @@ export default function Home() {
         setIsLoading(true);
         setError(null);
         setRecipes([]);
-
-        // Validate all ingredients
-        const invalids = ingredients.filter(i => !isValidIngredient(i));
-        if (invalids.length > 0) {
-            setIsLoading(false);
-            setError(`Invalid ingredient(s): ${invalids.join(", ")}. Please enter only real food ingredients.`);
-            return;
-        }
 
         try {
             const response = await fetch('/api/recipes', {
@@ -100,7 +91,15 @@ export default function Home() {
             }
 
             const data = await response.json();
-            setRecipes(data.recipes);
+
+            // Show warning if present
+            if (data.warning) {
+                setError(data.warning);
+            } else {
+                setError(null);
+            }
+
+            setRecipes(data.recipes || []);
         } catch (err) {
             setError('Failed to get recipe suggestions. Please try again.');
         } finally {
@@ -265,7 +264,7 @@ export default function Home() {
                             <p className="text-gray-600">Searching our database for perfect recipes...</p>
                         </div>
                     )}
-                    
+
                     {error && (
                         <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-8 rounded">
                             <div className="flex">
