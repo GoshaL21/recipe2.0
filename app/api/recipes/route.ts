@@ -1,30 +1,30 @@
-import {OpenAI} from 'openai';
-import {NextResponse} from 'next/server';
+import { OpenAI } from "openai";
+import { NextResponse } from "next/server";
 
 const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
+  apiKey: process.env.OPENAI_API_KEY,
 });
 
 export async function POST(req: Request) {
-    try {
-        const body = await req.json();
-        const {ingredients, cookingLevel, maxPrepTime, maxBudget} = body;
-        if (
-            !Array.isArray(ingredients) ||
-            ingredients.length === 0 ||
-            !cookingLevel ||
-            typeof maxPrepTime !== 'number' ||
-            typeof maxBudget !== 'number'
-        ) {
-            return NextResponse.json(
-                {error: 'Invalid input. Please provide all required fields.'},
-                {status: 400}
-            );
-        }
-        const prompt = `
+  try {
+    const body = await req.json();
+    const { ingredients, cookingLevel, maxPrepTime, maxBudget } = body;
+    if (
+      !Array.isArray(ingredients) ||
+      ingredients.length === 0 ||
+      !cookingLevel ||
+      typeof maxPrepTime !== "number" ||
+      typeof maxBudget !== "number"
+    ) {
+      return NextResponse.json(
+        { error: "Invalid input. Please provide all required fields." },
+        { status: 400 },
+      );
+    }
+    const prompt = `
 You are a recipe generator.
 
-Given the following user-provided ingredients: ${ingredients.join(', ')}
+Given the following user-provided ingredients: ${ingredients.join(", ")}
 
 Strict constraints:
 1. Identify and filter out any non-edible ingredients (e.g. car, metal, phone, plastic, etc.).
@@ -81,38 +81,37 @@ If no recipes can be created due to non-edible input, return:
 }
 `;
 
-        const completion = await openai.chat.completions.create({
-            messages: [{role: 'user', content: prompt}],
-            model: 'gpt-3.5-turbo',
-            temperature: 0.7,
-            response_format: {type: 'json_object'},
-        });
+    const completion = await openai.chat.completions.create({
+      messages: [{ role: "user", content: prompt }],
+      model: "gpt-3.5-turbo",
+      temperature: 0.7,
+      response_format: { type: "json_object" },
+    });
 
-
-        const content = completion.choices[0]?.message?.content;
-        if (!content) {
-            return NextResponse.json(
-                {error: 'No response from OpenAI.'},
-                {status: 502}
-            );
-        }
-
-        let parsedResponse;
-        try {
-            parsedResponse = JSON.parse(content);
-        } catch {
-            return NextResponse.json(
-                {error: 'Failed to parse OpenAI response.'},
-                {status: 500}
-            );
-        }
-
-        return NextResponse.json(parsedResponse);
-    } catch (error) {
-        console.error('Error in /api/recipes:', error);
-        return NextResponse.json(
-            {error: 'Failed to get recipe suggestions.'},
-            {status: 500}
-        );
+    const content = completion.choices[0]?.message?.content;
+    if (!content) {
+      return NextResponse.json(
+        { error: "No response from OpenAI." },
+        { status: 502 },
+      );
     }
+
+    let parsedResponse;
+    try {
+      parsedResponse = JSON.parse(content);
+    } catch {
+      return NextResponse.json(
+        { error: "Failed to parse OpenAI response." },
+        { status: 500 },
+      );
+    }
+
+    return NextResponse.json(parsedResponse);
+  } catch (error) {
+    console.error("Error in /api/recipes:", error);
+    return NextResponse.json(
+      { error: "Failed to get recipe suggestions." },
+      { status: 500 },
+    );
+  }
 }

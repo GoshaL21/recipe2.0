@@ -1,20 +1,20 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 export default function SignUp() {
   const router = useRouter();
 
   const [form, setForm] = useState({
-    name: '',
-    surname: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
+    name: "",
+    surname: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
   });
 
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -29,22 +29,24 @@ export default function SignUp() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
+    setError("");
 
     if (!validatePassword(form.password)) {
-      setError('Password must include at least 1 capital letter, 1 number, and 1 special character.');
+      setError(
+        "Password must include at least 1 capital letter, 1 number, and 1 special character.",
+      );
       return;
     }
 
     if (form.password !== form.confirmPassword) {
-      setError('Passwords do not match.');
+      setError("Passwords do not match.");
       return;
     }
 
     try {
-      const res = await fetch('/api/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const res = await fetch("/api/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           username: form.email,
           password: form.password,
@@ -56,14 +58,14 @@ export default function SignUp() {
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.message || 'Registration failed');
+        setError(data.message || "Registration failed");
         return;
       }
 
       // Registration successful, redirect to login
-      router.push('/login');
+      router.push("/login");
     } catch (err) {
-      setError('Something went wrong. Please try again.');
+      setError("Something went wrong. Please try again.");
     }
   };
 
@@ -77,7 +79,10 @@ export default function SignUp() {
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="flex gap-4">
             <div className="w-1/2">
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor="name"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
                 First Name
               </label>
               <input
@@ -92,7 +97,10 @@ export default function SignUp() {
               />
             </div>
             <div className="w-1/2">
-              <label htmlFor="surname" className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor="surname"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
                 Last Name
               </label>
               <input
@@ -109,7 +117,10 @@ export default function SignUp() {
           </div>
 
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+            <label
+              htmlFor="email"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
               Email
             </label>
             <input
@@ -125,7 +136,10 @@ export default function SignUp() {
           </div>
 
           <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+            <label
+              htmlFor="password"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
               Password
             </label>
             <input
@@ -141,7 +155,10 @@ export default function SignUp() {
           </div>
 
           <div>
-            <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
+            <label
+              htmlFor="confirmPassword"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
               Confirm Password
             </label>
             <input
@@ -160,8 +177,17 @@ export default function SignUp() {
             <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded">
               <div className="flex">
                 <div className="flex-shrink-0">
-                  <svg className="h-5 w-5 text-red-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                  <svg
+                    className="h-5 w-5 text-red-500"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                      clipRule="evenodd"
+                    />
                   </svg>
                 </div>
                 <div className="ml-3">
@@ -183,14 +209,14 @@ export default function SignUp() {
           <p className="text-gray-600 mb-4">Already have an account?</p>
           <div className="flex justify-center gap-4">
             <button
-              onClick={() => router.push('/')}
+              onClick={() => router.push("/")}
               className="text-purple-600 hover:text-purple-800 font-medium transition-colors"
             >
               Back to Home
             </button>
             <span className="text-gray-400">|</span>
             <button
-              onClick={() => router.push('/login')}
+              onClick={() => router.push("/login")}
               className="text-purple-600 hover:text-purple-800 font-medium transition-colors"
             >
               Login
