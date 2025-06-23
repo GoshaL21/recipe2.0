@@ -32,6 +32,7 @@ export default function Home() {
   const [cookingLevel, setCookingLevel] = useState<string>("intermediate");
   const [maxPrepTime, setMaxPrepTime] = useState<number>(60);
   const [maxBudget, setMaxBudget] = useState<number>(50);
+  const [dietaryPreference, setDietaryPreference] = useState<string>("none");
 
   const handleAddIngredient = (e: React.FormEvent) => {
     e.preventDefault();
@@ -67,6 +68,7 @@ export default function Home() {
           cookingLevel,
           maxPrepTime,
           maxBudget,
+          dietaryPreference,
         }),
       });
 
@@ -150,6 +152,29 @@ export default function Home() {
               <h3 className="text-lg font-semibold text-gray-800">
                 Recipe Preferences
               </h3>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-1">
+                  <label
+                    htmlFor="dietaryPreference"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
+                    Dietary Preference
+                  </label>
+                  <select
+                    id="dietaryPreference"
+                    value={dietaryPreference}
+                    onChange={(e) => setDietaryPreference(e.target.value)}
+                    className="w-full p-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  >
+                    <option value="none">None</option>
+                    <option value="vegetarian">Vegetarian</option>
+                    <option value="vegan">Vegan</option>
+                    <option value="gluten-free">Gluten-Free</option>
+                    <option value="keto">Keto</option>
+                    <option value="paleo">Paleo</option>
+                  </select>
+                </div>
+
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div>
                   <label
@@ -213,6 +238,7 @@ export default function Home() {
                     className="w-full p-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                   />
                 </div>
+
               </div>
             </div>
 

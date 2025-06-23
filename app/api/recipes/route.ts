@@ -8,111 +8,94 @@ const openai = new OpenAI({
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { ingredients, cookingLevel, maxPrepTime, maxBudget } = body;
-    if (
-      !Array.isArray(ingredients) ||
-      ingredients.length === 0 ||
-      !cookingLevel ||
-      typeof maxPrepTime !== "number" ||
-      typeof maxBudget !== "number"
-    ) {
+    const { ingredients, cookingLevel, maxPrepTime, maxBudget, dietaryPreference } = body;
+    
+    // Validate inputs
+    if (!Array.isArray(ingredients) || ingredients.length === 0) {
       return NextResponse.json(
-        { error: "Invalid input. Please provide all required fields." },
-        { status: 400 },
+        { error: "Please provide at least one ingredient." },
+        { status: 400 }
       );
     }
-    const prompt = `
-You are a recipe generator.
 
-Given the following user-provided ingredients: ${ingredients.join(", ")}
+    if (!cookingLevel || typeof maxPrepTime !== "number" || typeof maxBudget !== "number") {
+      return NextResponse.json(
+        { error: "Invalid input parameters." },
+        { status: 400 }
+      );
+    }
 
-Strict constraints:
-1. Identify and filter out any non-edible ingredients (e.g. car, metal, phone, plastic, etc.).
-2. If an ingredient seems like a typo, correct it only if the result is a common edible food item.
-// In your prompt string:
-3. If **none** of the ingredients are edible, return the following JSON:
-{
-  "recipes": [],
-  "warning": "Please remove non-edible ingredients and try again."
-}
-4. If at least one edible ingredient is found, generate up to 3 recipes that:
-  - Include at least one of the edible provided ingredients
-  - Are suitable for a ${cookingLevel} level cook
-  - Take no more than ${maxPrepTime} minutes to prepare and cook
-  - Cost no more than $${maxBudget} total
-  - Use no more than 2 additional common ingredients not among the provided ingredients
+    const dietaryText = dietaryPreference && dietaryPreference !== "none" 
+      ? `The recipes must be ${dietaryPreference}.` 
+      : "";
 
-Each recipe must include:
-1. Recipe name
-2. Ingredients object:
-   - "provided": list of used ingredients from the user, each with the amount in grams required by the recipe formatted as a string: "<amount_in_grams>g <ingredient_name>", e.g. "150g tomato"
-   - "additional": list of additional ingredients with amounts in grams, also formatted as "<amount_in_grams>g <ingredient_name>"
-3. Detailed, step-by-step instructions including times, temperatures, and cooking tips (always use amounts in grams for the provided and additional ingredients)
-4. Estimated cooking time (must be ≤ ${maxPrepTime} minutes)
-5. Estimated total cost in USD (as a number)
-6. Basic nutrition info: calories, protein (g), fat (g), carbs (g)
+    const prompt = `You are a professional chef creating recipes based on available ingredients.
 
-Return the result strictly in this JSON format:
+Ingredients provided: ${ingredients.join(", ")}
 
+Requirements:
+- Cooking level: ${cookingLevel}
+- Maximum preparation time: ${maxPrepTime} minutes
+- Maximum budget: $${maxBudget}
+${dietaryText}
+
+Please generate 3 recipes that:
+1. Use at least one provided ingredient
+2. Include clear measurements
+3. Have step-by-step instructions
+4. Include estimated cooking time
+5. Include estimated cost
+6. Include basic nutrition information
+
+Format the response as JSON with this structure:
 {
   "recipes": [
     {
-      "name": "Recipe Name",
+      "name": "Recipe name",
       "ingredients": {
-        "provided": ["150g tomato", "50g onion"],
-        "additional": ["10g olive oil"]
+        "provided": ["100g ingredient1", "200g ingredient2"],
+        "additional": ["50g common_ingredient1", "2 tbsp common_ingredient2"]
       },
-      "instructions": "Step-by-step instructions...",
-      "cookingTime": "XX minutes",
-      "cost": 12.5,
+      "instructions": "Step 1...\nStep 2...",
+      "cookingTime": "30 minutes",
+      "cost": 12.50,
       "nutrition": {
-        "calories": 500,
-        "protein": 30,
-        "fat": 15,
-        "carbs": 60
+        "calories": 350,
+        "protein": 25,
+        "fat": 10,
+        "carbs": 40
       }
     }
   ]
-}
-
-If no recipes can be created due to non-edible input, return:
-{
-  "recipes": [],
-  "warning": "Please remove non-edible ingredients and try again."
-}
-`;
+}`;
 
     const completion = await openai.chat.completions.create({
+      model: "gpt-3.5-turbo", // or "gpt-4" if you have access
       messages: [{ role: "user", content: prompt }],
-      model: "gpt-3.5-turbo",
-      temperature: 0.3,
-      response_format: { type: "json_object" },
+      response_format: { type: "json_object" }, // This ensures JSON response
     });
 
     const content = completion.choices[0]?.message?.content;
+    
     if (!content) {
-      return NextResponse.json(
-        { error: "No response from OpenAI." },
-        { status: 502 },
-      );
+      throw new Error("No content received from OpenAI");
     }
 
-    let parsedResponse;
     try {
-      parsedResponse = JSON.parse(content);
-    } catch {
+      const parsed = JSON.parse(content);
+      return NextResponse.json(parsed);
+    } catch (e) {
+      console.error("Failed to parse OpenAI response:", content);
       return NextResponse.json(
-        { error: "Failed to parse OpenAI response." },
-        { status: 500 },
+        { error: "Received malformed response from recipe generator", details: content },
+        { status: 500 }
       );
     }
-
-    return NextResponse.json(parsedResponse);
-  } catch (error) {
-    console.error("Error in /api/recipes:", error);
+  } catch (err) {
+    console.error("API Error:", err);
     return NextResponse.json(
-      { error: "Failed to get recipe suggestions." },
-      { status: 500 },
+      { error: "Failed to generate recipes", details: err.message },
+      { status: 500 }
     );
   }
 }
