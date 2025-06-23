@@ -40,26 +40,27 @@ Strict constraints:
   - Are suitable for a ${cookingLevel} level cook
   - Take no more than ${maxPrepTime} minutes to prepare and cook
   - Cost no more than $${maxBudget} total
-  - Use no more than 2 additional common ingredients
+  - Use no more than 2 additional common ingredients not among the provided ingredients
 
 Each recipe must include:
 1. Recipe name
 2. Ingredients object:
-   - "provided": list of used ingredients from the user
-   - "additional": list of extra ingredients used (max 2)
-3. Detailed, step-by-step instructions including times, temperatures, and cooking tips
+   - "provided": list of used ingredients from the user, each with the amount in grams required by the recipe formatted as a string: "<amount_in_grams>g <ingredient_name>", e.g. "150g tomato"
+   - "additional": list of additional ingredients with amounts in grams, also formatted as "<amount_in_grams>g <ingredient_name>"
+3. Detailed, step-by-step instructions including times, temperatures, and cooking tips (always use amounts in grams for the provided and additional ingredients)
 4. Estimated cooking time (must be ≤ ${maxPrepTime} minutes)
 5. Estimated total cost in USD (as a number)
 6. Basic nutrition info: calories, protein (g), fat (g), carbs (g)
 
 Return the result strictly in this JSON format:
+
 {
   "recipes": [
     {
       "name": "Recipe Name",
       "ingredients": {
-        "provided": ["ingredient1", "ingredient2"],
-        "additional": ["ingredient3"]
+        "provided": ["150g tomato", "50g onion"],
+        "additional": ["10g olive oil"]
       },
       "instructions": "Step-by-step instructions...",
       "cookingTime": "XX minutes",
@@ -84,7 +85,7 @@ If no recipes can be created due to non-edible input, return:
     const completion = await openai.chat.completions.create({
       messages: [{ role: "user", content: prompt }],
       model: "gpt-3.5-turbo",
-      temperature: 0.7,
+      temperature: 0.3,
       response_format: { type: "json_object" },
     });
 

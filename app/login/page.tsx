@@ -23,16 +23,22 @@ export default function LoginPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          username: email, // using email as username
+          username: email,
           password,
         }),
       });
+
       const data = await res.json();
+
       if (!res.ok) {
         setError(data.message || "Login failed");
         return;
       }
-      // Login successful, redirect to dashboard
+
+      // Store JWT token in localStorage
+      localStorage.setItem("token", data.token);
+
+      // Redirect after successful login
       router.push("/");
     } catch (err) {
       setError("Something went wrong. Please try again.");
