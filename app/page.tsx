@@ -5,6 +5,7 @@ import IngredientList from "./components/IngredientList";
 import RecipeCard from "./components/RecipeCard";
 import { useRouter } from "next/navigation";
 import NavBar from "./components/NavBar";
+import { ArrowBigRight } from "lucide-react";
 
 type Recipe = {
   name: string;
@@ -154,26 +155,26 @@ export default function Home() {
               </h3>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-1">
-                  <label
-                    htmlFor="dietaryPreference"
-                    className="block text-sm font-medium text-gray-700 mb-2"
-                  >
-                    Dietary Preference
-                  </label>
-                  <select
-                    id="dietaryPreference"
-                    value={dietaryPreference}
-                    onChange={(e) => setDietaryPreference(e.target.value)}
-                    className="w-full p-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  >
-                    <option value="none">None</option>
-                    <option value="vegetarian">Vegetarian</option>
-                    <option value="vegan">Vegan</option>
-                    <option value="gluten-free">Gluten-Free</option>
-                    <option value="keto">Keto</option>
-                    <option value="paleo">Paleo</option>
-                  </select>
-                </div>
+                <label
+                  htmlFor="dietaryPreference"
+                  className="block text-sm font-medium text-gray-700 mb-2"
+                >
+                  Dietary Preference
+                </label>
+                <select
+                  id="dietaryPreference"
+                  value={dietaryPreference}
+                  onChange={(e) => setDietaryPreference(e.target.value)}
+                  className="w-full p-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                >
+                  <option value="none">None</option>
+                  <option value="vegetarian">Vegetarian</option>
+                  <option value="vegan">Vegan</option>
+                  <option value="gluten-free">Gluten-Free</option>
+                  <option value="keto">Keto</option>
+                  <option value="paleo">Paleo</option>
+                </select>
+              </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div>
@@ -209,7 +210,7 @@ export default function Home() {
                     onChange={(e) => {
                       const val = e.target.value;
                       setMaxPrepTime(
-                        val === "" ? 0 : Math.max(0, parseInt(val, 10) || 0)
+                        val === "" ? 0 : Math.max(0, parseInt(val, 10) || 0),
                       );
                     }}
                     min="0"
@@ -231,14 +232,13 @@ export default function Home() {
                     onChange={(e) => {
                       const val = e.target.value;
                       setMaxBudget(
-                        val === "" ? 0 : Math.max(0, parseFloat(val) || 0)
+                        val === "" ? 0 : Math.max(0, parseFloat(val) || 0),
                       );
                     }}
                     min="0"
                     className="w-full p-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                   />
                 </div>
-
               </div>
             </div>
 
@@ -273,19 +273,7 @@ export default function Home() {
                 </>
               ) : (
                 <>
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-5 w-5"
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M6 10a1 1 0 012 0v3a1 1 0 11-2 0v-3zm3-5a1 1 0 012 0v8a1 1 0 11-2 0V5z"
-                      clipRule="evenodd"
-                    />
-                    <path d="M4 13a3 3 0 106 0H4z" />
-                  </svg>
+                  <ArrowBigRight />
                   <span>Find Recipes</span>
                 </>
               )}
