@@ -1,9 +1,31 @@
 import { OpenAI } from "openai";
 import { NextResponse } from "next/server";
+import { PrismaClient } from "@prisma/client";
+import jwt from "jsonwebtoken";
+
+const prisma = new PrismaClient();
+
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
+
+export async function GET() {
+  try {
+    const recipes = await prisma.recipe.findMany({
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+    console.log("Fetched recipes:", recipes);
+    return NextResponse.json(recipes);
+  } catch (error) {
+    console.error('Error fetching recipes:', error);
+    return NextResponse.json({ error: 'Something went wrong' }, { status: 500 });
+  }
+}
+
+
 
 export async function POST(req: Request) {
   try {

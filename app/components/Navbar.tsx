@@ -62,6 +62,12 @@ export default function Navbar() {
           <div className="flex items-center space-x-4">
             {token ? (
               <>
+              <button
+                  onClick={() => router.push('/myrecipes')}
+                  className="px-4 py-2 rounded-md text-purple-600 hover:bg-purple-50 transition-colors duration-200 font-medium"
+                >
+                  My Recipes
+                </button>
                 <button
                   onClick={() => router.push('/account')}
                   className="px-4 py-2 rounded-md text-purple-600 hover:bg-purple-50 transition-colors duration-200 font-medium"

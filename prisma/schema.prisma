@@ -13,4 +13,18 @@ model User {
   password String
   name     String?
   surname  String?
+  recipes Recipe[]
+}
+
+model Recipe {
+  id           Int      @id @default(autoincrement())
+  user         User     @relation(fields: [userId], references: [id])
+  userId       Int
+  name         String
+  ingredients Ingredient[]    // store ingredients as JSON object/array
+  instructions String
+  cookingTime  String
+  cost         Float
+  nutrition    Json     // e.g. calories, protein, fat, carbs
+  createdAt    DateTime @default(now())
 }

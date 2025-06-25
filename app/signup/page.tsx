@@ -15,6 +15,7 @@ export default function SignUp() {
   });
 
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -30,10 +31,11 @@ export default function SignUp() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setSuccess("");
 
     if (!validatePassword(form.password)) {
       setError(
-        "Password must include at least 1 capital letter, 1 number, and 1 special character.",
+        "Password must include at least 1 capital letter, 1 number, and 1 special character."
       );
       return;
     }
@@ -62,8 +64,11 @@ export default function SignUp() {
         return;
       }
 
-      // Registration successful, redirect to login
-      router.push("/login");
+      setSuccess("Account created successfully! Redirecting to login...");
+
+      setTimeout(() => {
+        router.push("/login");
+      }, 1500);
     } catch (err) {
       setError("Something went wrong. Please try again.");
     }
@@ -79,10 +84,7 @@ export default function SignUp() {
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="flex gap-4">
             <div className="w-1/2">
-              <label
-                htmlFor="name"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
+              <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
                 First Name
               </label>
               <input
@@ -97,10 +99,7 @@ export default function SignUp() {
               />
             </div>
             <div className="w-1/2">
-              <label
-                htmlFor="surname"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
+              <label htmlFor="surname" className="block text-sm font-medium text-gray-700 mb-1">
                 Last Name
               </label>
               <input
@@ -117,10 +116,7 @@ export default function SignUp() {
           </div>
 
           <div>
-            <label
-              htmlFor="email"
-              className="block text-sm font-medium text-gray-700 mb-1"
-            >
+            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
               Email
             </label>
             <input
@@ -136,10 +132,7 @@ export default function SignUp() {
           </div>
 
           <div>
-            <label
-              htmlFor="password"
-              className="block text-sm font-medium text-gray-700 mb-1"
-            >
+            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
               Password
             </label>
             <input
@@ -155,10 +148,7 @@ export default function SignUp() {
           </div>
 
           <div>
-            <label
-              htmlFor="confirmPassword"
-              className="block text-sm font-medium text-gray-700 mb-1"
-            >
+            <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
               Confirm Password
             </label>
             <input
@@ -177,12 +167,7 @@ export default function SignUp() {
             <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded">
               <div className="flex">
                 <div className="flex-shrink-0">
-                  <svg
-                    className="h-5 w-5 text-red-500"
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
-                  >
+                  <svg className="h-5 w-5 text-red-500" viewBox="0 0 20 20" fill="currentColor">
                     <path
                       fillRule="evenodd"
                       d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
@@ -192,6 +177,25 @@ export default function SignUp() {
                 </div>
                 <div className="ml-3">
                   <p className="text-sm text-red-700">{error}</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {success && (
+            <div className="bg-green-50 border-l-4 border-green-500 p-4 rounded">
+              <div className="flex">
+                <div className="flex-shrink-0">
+                  <svg className="h-5 w-5 text-green-500" viewBox="0 0 20 20" fill="currentColor">
+                    <path
+                      fillRule="evenodd"
+                      d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.707a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414L9 13.414l4.707-4.707z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                </div>
+                <div className="ml-3">
+                  <p className="text-sm text-green-700">{success}</p>
                 </div>
               </div>
             </div>
