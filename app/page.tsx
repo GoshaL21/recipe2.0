@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import IngredientList from "./components/IngredientList";
 import RecipeCard from "./components/RecipeCard";
 import { useRouter } from "next/navigation";
@@ -34,6 +34,14 @@ export default function Home() {
   const [maxPrepTime, setMaxPrepTime] = useState<number>(60);
   const [maxBudget, setMaxBudget] = useState<number>(50);
   const [dietaryPreference, setDietaryPreference] = useState<string>("none");
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false);
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      setShowLoginPrompt(true);
+    }
+  }, []);
 
   const handleAddIngredient = (e: React.FormEvent) => {
     e.preventDefault();
@@ -96,6 +104,22 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 pb-12">
+      {/* Login Prompt Modal */}
+      {showLoginPrompt && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60">
+          <div className="bg-white rounded-xl shadow-lg p-8 max-w-md w-full text-center">
+            <h2 className="text-2xl font-bold mb-4 text-gray-800">Log in Required</h2>
+            <p className="mb-6 text-gray-600">You must be logged in to use this service.</p>
+            <button
+              className="bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition"
+              onClick={() => window.location.href = '/login'}
+            >
+              Go to Login
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Navigation Bar */}
       <NavBar />
 
@@ -287,7 +311,7 @@ export default function Home() {
           </div>
 
           {/* Recipes List */}
-          {recipes.length > 0 && (
+          {recipes.length > 0 && !showLoginPrompt && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               {recipes.map((recipe, idx) => (
                 <RecipeCard key={idx} recipe={recipe} />

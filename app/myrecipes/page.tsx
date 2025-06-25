@@ -9,6 +9,14 @@ const MyRecipes = () => {
   const [loading, setLoading] = useState(true);
   const [selectedRecipe, setSelectedRecipe] = useState(null);
 
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      window.location.href = '/login';
+    }
+  }, []);
+
   useEffect(() => {
     const fetchRecipes = async () => {
       try {
@@ -44,140 +52,165 @@ const MyRecipes = () => {
     });
   };
 
-  const RecipeCard = ({ recipe }) => (
-    <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow duration-300">
-      <div className="flex justify-between items-start mb-4">
-        <h3
-          className="text-xl font-semibold text-gray-800 hover:text-blue-600 cursor-pointer"
+  // Helper to normalize ingredients to an array of objects with a 'name' property
+  const getIngredientList = (ingredients) => {
+    if (Array.isArray(ingredients)) {
+      // If already array of objects (with name property)
+      if (ingredients.length > 0 && typeof ingredients[0] === 'object' && 'name' in ingredients[0]) {
+        return ingredients;
+      }
+      // If array of strings
+      return ingredients.map(name => ({ name }));
+    } else if (ingredients && (ingredients.provided || ingredients.additional)) {
+      // Flatten provided and additional arrays (from AI format)
+      return [
+        ...(ingredients.provided?.map(name => ({ name })) || []),
+        ...(ingredients.additional?.map(name => ({ name })) || []),
+      ];
+    }
+    return [];
+  };
+
+  const RecipeCard = ({ recipe }) => {
+    const ingredientList = getIngredientList(recipe.ingredients);
+    return (
+      <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow duration-300">
+        <div className="flex justify-between items-start mb-4">
+          <h3
+            className="text-xl font-semibold text-gray-800 hover:text-blue-600 cursor-pointer"
+            onClick={() => setSelectedRecipe(recipe)}
+          >
+            {recipe.name}
+          </h3>
+          <span className="text-sm text-gray-500">{formatDate(recipe.createdAt)}</span>
+        </div>
+
+        <div className="grid grid-cols-3 gap-4 mb-4 p-3 bg-gray-50 rounded-lg">
+          <div className="text-center">
+            <Clock className="w-5 h-5 mx-auto mb-1 text-gray-500" />
+            <div className="text-sm font-medium text-gray-700">{recipe.cookingTime}</div>
+          </div>
+          <div className="text-center">
+            <DollarSign className="w-5 h-5 mx-auto mb-1 text-gray-500" />
+            <div className="text-sm font-medium text-gray-700">${recipe.cost.toFixed(2)}</div>
+          </div>
+          <div className="text-center">
+            <ChefHat className="w-5 h-5 mx-auto mb-1 text-gray-500" />
+            <div className="text-sm font-medium text-gray-700">{recipe.nutrition.calories} cal</div>
+          </div>
+        </div>
+
+        <div className="mb-4">
+          <h4 className="text-sm font-medium text-gray-700 mb-2">Ingredients ({ingredientList.length})</h4>
+          <div className="text-sm text-gray-600">
+            {ingredientList.slice(0, 3).map((ingredient, index) => (
+              <span key={index}>
+                {ingredient.name}
+                {index < 2 && index < ingredientList.length - 1 ? ', ' : ''}
+              </span>
+            ))}
+            {ingredientList.length > 3 && (
+              <span className="text-blue-600"> +{ingredientList.length - 3} more</span>
+            )}
+          </div>
+        </div>
+
+        <button
           onClick={() => setSelectedRecipe(recipe)}
+          className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
         >
-          {recipe.name}
-        </h3>
-        <span className="text-sm text-gray-500">{formatDate(recipe.createdAt)}</span>
+          View Full Recipe
+        </button>
       </div>
+    );
+  };
 
-      <div className="grid grid-cols-3 gap-4 mb-4 p-3 bg-gray-50 rounded-lg">
-        <div className="text-center">
-          <Clock className="w-5 h-5 mx-auto mb-1 text-gray-500" />
-          <div className="text-sm font-medium text-gray-700">{recipe.cookingTime}</div>
-        </div>
-        <div className="text-center">
-          <DollarSign className="w-5 h-5 mx-auto mb-1 text-gray-500" />
-          <div className="text-sm font-medium text-gray-700">${recipe.cost.toFixed(2)}</div>
-        </div>
-        <div className="text-center">
-          <ChefHat className="w-5 h-5 mx-auto mb-1 text-gray-500" />
-          <div className="text-sm font-medium text-gray-700">{recipe.nutrition.calories} cal</div>
-        </div>
-      </div>
-
-      <div className="mb-4">
-        <h4 className="text-sm font-medium text-gray-700 mb-2">Ingredients ({recipe.ingredients.length})</h4>
-        <div className="text-sm text-gray-600">
-          {recipe.ingredients.slice(0, 3).map((ingredient, index) => (
-            <span key={index}>
-              {ingredient.name}
-              {index < 2 && index < recipe.ingredients.length - 1 ? ', ' : ''}
-            </span>
-          ))}
-          {recipe.ingredients.length > 3 && (
-            <span className="text-blue-600"> +{recipe.ingredients.length - 3} more</span>
-          )}
-        </div>
-      </div>
-
-      <button
-        onClick={() => setSelectedRecipe(recipe)}
-        className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
-      >
-        View Full Recipe
-      </button>
-    </div>
-  );
-
-  const RecipeModal = ({ recipe, onClose }) => (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg max-w-4xl max-h-[90vh] overflow-y-auto w-full">
-        <div className="sticky top-0 bg-white border-b border-gray-200 p-6">
-          <div className="flex justify-between items-center">
-            <h2 className="text-2xl font-bold text-gray-800">{recipe.name}</h2>
-            <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full">
-              <X className="w-5 h-5" />
-            </button>
-          </div>
-          <p className="text-gray-500 text-sm mt-1">Created on {formatDate(recipe.createdAt)}</p>
-        </div>
-
-        <div className="p-6">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 p-4 bg-gray-50 rounded-lg">
-            <div className="text-center">
-              <Clock className="w-5 h-5 mx-auto mb-1 text-gray-500" />
-              <div className="text-sm font-medium">Cooking Time</div>
-              <div className="text-lg font-bold text-gray-900">{recipe.cookingTime}</div>
+  const RecipeModal = ({ recipe, onClose }) => {
+    const ingredientList = getIngredientList(recipe.ingredients);
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div className="bg-white rounded-lg max-w-4xl max-h-[90vh] overflow-y-auto w-full">
+          <div className="sticky top-0 bg-white border-b border-gray-200 p-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-bold text-gray-800">{recipe.name}</h2>
+              <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full">
+                <X className="w-5 h-5" />
+              </button>
             </div>
-            <div className="text-center">
-              <DollarSign className="w-5 h-5 mx-auto mb-1 text-gray-500" />
-              <div className="text-sm font-medium">Cost</div>
-              <div className="text-lg font-bold text-gray-900">${recipe.cost.toFixed(2)}</div>
-            </div>
-            <div className="text-center">
-              <div className="text-sm font-medium">Calories</div>
-              <div className="text-lg font-bold text-gray-900">{recipe.nutrition.calories}</div>
-            </div>
-            <div className="text-center">
-              <div className="text-sm font-medium">Protein</div>
-              <div className="text-lg font-bold text-gray-900">{recipe.nutrition.protein}g</div>
-            </div>
+            <p className="text-gray-500 text-sm mt-1">Created on {formatDate(recipe.createdAt)}</p>
           </div>
 
-          <div className="mb-6 p-4 bg-green-50 rounded-lg">
-            <h3 className="text-lg font-semibold mb-3 text-green-800">Nutrition Information</h3>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div>
-                <span className="text-sm text-green-600">Calories:</span>
-                <div className="font-medium">{recipe.nutrition.calories}</div>
+          <div className="p-6">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 p-4 bg-gray-50 rounded-lg">
+              <div className="text-center">
+                <Clock className="w-5 h-5 mx-auto mb-1 text-gray-500" />
+                <div className="text-sm font-medium">Cooking Time</div>
+                <div className="text-lg font-bold text-gray-900">{recipe.cookingTime}</div>
               </div>
-              <div>
-                <span className="text-sm text-green-600">Protein:</span>
-                <div className="font-medium">{recipe.nutrition.protein}g</div>
+              <div className="text-center">
+                <DollarSign className="w-5 h-5 mx-auto mb-1 text-gray-500" />
+                <div className="text-sm font-medium">Cost</div>
+                <div className="text-lg font-bold text-gray-900">${recipe.cost.toFixed(2)}</div>
               </div>
-              <div>
-                <span className="text-sm text-green-600">Fat:</span>
-                <div className="font-medium">{recipe.nutrition.fat}g</div>
+              <div className="text-center">
+                <div className="text-sm font-medium">Calories</div>
+                <div className="text-lg font-bold text-gray-900">{recipe.nutrition.calories}</div>
               </div>
-              <div>
-                <span className="text-sm text-green-600">Carbs:</span>
-                <div className="font-medium">{recipe.nutrition.carbs}g</div>
+              <div className="text-center">
+                <div className="text-sm font-medium">Protein</div>
+                <div className="text-lg font-bold text-gray-900">{recipe.nutrition.protein}g</div>
               </div>
             </div>
-          </div>
 
-          <div className="grid md:grid-cols-2 gap-6">
-            <div>
-              <h3 className="text-lg font-semibold mb-4">Ingredients</h3>
-              <ul className="space-y-3">
-                {recipe.ingredients.map((ingredient, index) => (
-                  <li key={index} className="flex justify-between items-center p-2 bg-gray-50 rounded">
-                    <span className="font-medium">{ingredient.name}</span>
-                    <span className="text-gray-600 text-sm">{ingredient.amount}</span>
-                  </li>
-                ))}
-              </ul>
+            <div className="mb-6 p-4 bg-green-50 rounded-lg">
+              <h3 className="text-lg font-semibold mb-3 text-green-800">Nutrition Information</h3>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div>
+                  <span className="text-sm text-green-600">Calories:</span>
+                  <div className="font-medium">{recipe.nutrition.calories}</div>
+                </div>
+                <div>
+                  <span className="text-sm text-green-600">Protein:</span>
+                  <div className="font-medium">{recipe.nutrition.protein}g</div>
+                </div>
+                <div>
+                  <span className="text-sm text-green-600">Fat:</span>
+                  <div className="font-medium">{recipe.nutrition.fat}g</div>
+                </div>
+                <div>
+                  <span className="text-sm text-green-600">Carbs:</span>
+                  <div className="font-medium">{recipe.nutrition.carbs}g</div>
+                </div>
+              </div>
             </div>
 
-            <div>
-              <h3 className="text-lg font-semibold mb-4">Instructions</h3>
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <div className="whitespace-pre-line text-gray-700 leading-relaxed">
-                  {recipe.instructions}
+            <div className="grid md:grid-cols-2 gap-6">
+              <div>
+                <h3 className="text-lg font-semibold mb-4">Ingredients</h3>
+                <ul className="space-y-3">
+                  {ingredientList.map((ingredient, index) => (
+                    <li key={index} className="flex justify-between items-center p-2 bg-gray-50 rounded">
+                      <span className="font-medium">{ingredient.name}</span>
+                      <span className="text-gray-600 text-sm">{ingredient.amount || ''}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div>
+                <h3 className="text-lg font-semibold mb-4">Instructions</h3>
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <div className="whitespace-pre-line text-gray-700 leading-relaxed">
+                    {recipe.instructions}
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   if (loading) {
     return (
