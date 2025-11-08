@@ -4,12 +4,12 @@ import React from "react";
 
 type IngredientListProps = {
   ingredients: string[];
-  onRemoveIngredient: (index: number) => void;
+  onRemoveIngredientAction: (index: number) => void;
 };
 
 export default function IngredientList({
   ingredients,
-  onRemoveIngredient,
+  onRemoveIngredientAction,
 }: IngredientListProps) {
   if (ingredients.length === 0) {
     return (
@@ -36,7 +36,7 @@ export default function IngredientList({
             >
               <span className="text-gray-700 font-medium">{ingredient}</span>
               <button
-                onClick={() => onRemoveIngredient(index)}
+                onClick={() => onRemoveIngredientAction(index)}
                 className="text-gray-400 hover:text-red-500 transition-colors duration-200 p-2 rounded-full hover:bg-red-50 group-hover:text-red-400"
               >
                 <svg

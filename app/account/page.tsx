@@ -8,6 +8,10 @@ type User = {
   name: string;
   surname: string;
   email: string;
+  age?: number;
+  weight?: number;
+  activityLevel?: string;
+  diet?: string;
 };
 
 export default function AccountPage() {
@@ -18,16 +22,28 @@ export default function AccountPage() {
     name: "",
     surname: "",
     email: "",
+    age: undefined,
+    weight: undefined,
+    activityLevel: "",
+    diet: "",
   });
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [age, setAge] = useState<number | undefined>(undefined);
+  const [weight, setWeight] = useState<number | undefined>(undefined);
+  const [activityLevel, setActivityLevel] = useState("");
+  const [diet, setDiet] = useState("");
 
   // Change Email form state
   const [newEmail, setNewEmail] = useState("");
   const [confirmEmail, setConfirmEmail] = useState("");
   const [currentPasswordForEmail, setCurrentPasswordForEmail] = useState("");
+
+  // Validation error states for Age and Weight
+  const [ageError, setAgeError] = useState("");
+  const [weightError, setWeightError] = useState("");
 
   // Change Password form state
   const [currentPassword, setCurrentPassword] = useState("");
@@ -47,45 +63,53 @@ export default function AccountPage() {
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        const token = localStorage.getItem('token');
-        
+        const token = localStorage.getItem("token");
+
         if (!token) {
           // No token, redirect to login
-          router.push('/login');
+          router.push("/login");
           return;
         }
 
-        const response = await fetch('/api/user', {
+        const response = await fetch("/api/user", {
           headers: {
-            'Authorization': 'Bearer ' + token,
-          }
+            Authorization: "Bearer " + token,
+          },
         });
 
         if (!response.ok) {
           if (response.status === 401) {
             // Token is invalid, remove it and redirect to login
-            localStorage.removeItem('token');
-            router.push('/login');
+            localStorage.removeItem("token");
+            router.push("/login");
             return;
           }
-          throw new Error('Failed to fetch user data');
+          throw new Error("Failed to fetch user data");
         }
 
         const data = await response.json();
-        
+
         if (data.user) {
           const userData = {
-            name: data.user.name || '',
-            surname: data.user.surname || '',
-            email: data.user.email || ''
+            name: data.user.name || "",
+            surname: data.user.surname || "",
+            email: data.user.email || "",
+            age: data.user.age || undefined,
+            weight: data.user.weight || undefined,
+            activityLevel: data.user.activityLevel || "",
+            diet: data.user.diet || "",
           };
           setUser(userData);
           setName(userData.name + " " + userData.surname);
           setEmail(userData.email);
+          setAge(userData.age);
+          setWeight(userData.weight);
+          setActivityLevel(userData.activityLevel);
+          setDiet(userData.diet);
         }
       } catch (error) {
-        console.error('Error fetching user data:', error);
-        setMessage('Failed to load user data. Please try refreshing the page.');
+        console.error("Error fetching user data:", error);
+        setMessage("Failed to load user data. Please try refreshing the page.");
       } finally {
         setIsLoading(false);
       }
@@ -98,46 +122,63 @@ export default function AccountPage() {
   const handleSaveProfile = async () => {
     setMessage(null);
     setIsSaving(true);
-  
+    // ✅ Block saving if age or weight invalid
+    if (ageError || weightError) {
+      setMessage("Please fix the highlighted errors before saving.");
+      setIsSaving(false);
+      return;
+    }
+
     if (!name.trim()) {
       setMessage("Name cannot be empty.");
       setIsSaving(false);
       return;
     }
-  
+
     const parts = name.trim().split(" ");
     const firstName = parts[0];
     const lastName = parts.slice(1).join(" "); // support multi-part surnames
-  
+
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('/api/user', {
-        method: 'PUT',
+      const token = localStorage.getItem("token");
+      const response = await fetch("/api/user", {
+        method: "PUT",
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer ' + token,
+          "Content-Type": "application/json",
+          Authorization: "Bearer " + token,
         },
         body: JSON.stringify({
           name: firstName,
           surname: lastName,
+          age,
+          weight,
+          activityLevel,
+          diet,
         }),
       });
-  
+
       if (!response.ok) {
-        throw new Error('Failed to update profile');
+        throw new Error("Failed to update profile");
       }
-  
+
       const data = await response.json();
-      setUser(prev => ({ ...prev, name: firstName, surname: lastName }));
+      setUser((prev) => ({
+        ...prev,
+        name: firstName,
+        surname: lastName,
+        age,
+        weight,
+        activityLevel,
+        diet,
+      }));
       setMessage("Profile updated successfully!");
     } catch (error) {
-      console.error('Error updating profile:', error);
+      console.error("Error updating profile:", error);
       setMessage("Failed to update profile. Please try again.");
     } finally {
       setIsSaving(false);
     }
   };
-  
 
   // Save email changes handler
   const handleChangeEmail = async () => {
@@ -158,12 +199,12 @@ export default function AccountPage() {
 
     setIsSaving(true);
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('/api/user/change-email', {
-        method: 'PUT',
+      const token = localStorage.getItem("token");
+      const response = await fetch("/api/user/change-email", {
+        method: "PUT",
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer ' + token,
+          "Content-Type": "application/json",
+          Authorization: "Bearer " + token,
         },
         body: JSON.stringify({
           newEmail: newEmail.trim(),
@@ -173,10 +214,12 @@ export default function AccountPage() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || errorData.error || 'Failed to update email');
+        throw new Error(
+          errorData.message || errorData.error || "Failed to update email",
+        );
       }
 
-      setUser(prev => ({ ...prev, email: newEmail }));
+      setUser((prev) => ({ ...prev, email: newEmail }));
       setEmail(newEmail);
       setNewEmail("");
       setConfirmEmail("");
@@ -184,8 +227,12 @@ export default function AccountPage() {
       setMessage("Email updated successfully!");
       setActiveSection("profile");
     } catch (error) {
-      console.error('Error updating email:', error);
-      setMessage(error instanceof Error ? error.message : "Failed to update email. Please try again.");
+      console.error("Error updating email:", error);
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : "Failed to update email. Please try again.",
+      );
     } finally {
       setIsSaving(false);
     }
@@ -195,7 +242,11 @@ export default function AccountPage() {
   const handleChangePassword = async () => {
     setMessage(null);
 
-    if (!currentPassword.trim() || !newPassword.trim() || !confirmPassword.trim()) {
+    if (
+      !currentPassword.trim() ||
+      !newPassword.trim() ||
+      !confirmPassword.trim()
+    ) {
       setMessage("All password fields are required.");
       return;
     }
@@ -210,12 +261,12 @@ export default function AccountPage() {
 
     setIsSaving(true);
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('/api/user/change-password', {
-        method: 'PUT',
+      const token = localStorage.getItem("token");
+      const response = await fetch("/api/user/change-password", {
+        method: "PUT",
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer ' + token,
+          "Content-Type": "application/json",
+          Authorization: "Bearer " + token,
         },
         body: JSON.stringify({
           currentPassword,
@@ -225,7 +276,7 @@ export default function AccountPage() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to change password');
+        throw new Error(errorData.message || "Failed to change password");
       }
 
       setCurrentPassword("");
@@ -233,8 +284,12 @@ export default function AccountPage() {
       setConfirmPassword("");
       setMessage("Password changed successfully!");
     } catch (error) {
-      console.error('Error changing password:', error);
-      setMessage(error instanceof Error ? error.message : "Failed to change password. Please try again.");
+      console.error("Error changing password:", error);
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : "Failed to change password. Please try again.",
+      );
     } finally {
       setIsSaving(false);
     }
@@ -246,26 +301,26 @@ export default function AccountPage() {
       setMessage("Please confirm account deletion.");
       return;
     }
-    
+
     setIsSaving(true);
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('/api/user', {
-        method: 'DELETE',
+      const token = localStorage.getItem("token");
+      const response = await fetch("/api/user", {
+        method: "DELETE",
         headers: {
-          'Authorization': 'Bearer ' + token,
+          Authorization: "Bearer " + token,
         },
       });
 
       if (!response.ok) {
-        throw new Error('Failed to delete account');
+        throw new Error("Failed to delete account");
       }
 
-      localStorage.removeItem('token');
+      localStorage.removeItem("token");
       alert("Account deleted successfully. Redirecting to homepage...");
       router.push("/");
     } catch (error) {
-      console.error('Error deleting account:', error);
+      console.error("Error deleting account:", error);
       setMessage("Failed to delete account. Please try again.");
     } finally {
       setIsSaving(false);
@@ -422,10 +477,14 @@ export default function AccountPage() {
 
             {activeSection === "profile" && (
               <>
-                <h2 className="text-3xl font-semibold mb-6">Profile Information</h2>
+                <h2 className="text-3xl font-semibold mb-6">
+                  Profile Information
+                </h2>
 
                 <label className="block mb-4">
-                  <span className="text-gray-700 font-semibold mb-1 block">Name</span>
+                  <span className="text-gray-700 font-semibold mb-1 block">
+                    Name
+                  </span>
                   <input
                     type="text"
                     value={name}
@@ -436,7 +495,9 @@ export default function AccountPage() {
                 </label>
 
                 <label className="block mb-6">
-                  <span className="text-gray-700 font-semibold mb-1 block">Email</span>
+                  <span className="text-gray-700 font-semibold mb-1 block">
+                    Email
+                  </span>
                   <input
                     type="email"
                     value={email}
@@ -445,7 +506,141 @@ export default function AccountPage() {
                     placeholder="Your email address"
                     disabled
                   />
-                  <p className="text-sm text-gray-500 mt-1">Email changes must be done in 'Change Email' section.</p>
+                  <p className="text-sm text-gray-500 mt-1">
+                    Email changes must be done in 'Change Email' section.
+                  </p>
+                </label>
+
+                {/* Age input */}
+                <label className="block mb-4">
+                  <span className="text-gray-700 font-semibold mb-1 block">
+                    Age
+                  </span>
+                  <input
+                    type="number"
+                    min={10}
+                    max={120}
+                    value={age !== undefined ? age : ""}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val === "") {
+                        setAge(undefined);
+                      } else {
+                        const num = Number(val);
+                        if (!isNaN(num) && num >= 0 && num <= 200) {
+                          setAge(num);
+                        }
+                      }
+                    }}
+                    onBlur={() => {
+                      if (age && (age < 10 || age > 120)) {
+                        setAgeError("Age must be between 10 and 120.");
+                      } else {
+                        setAgeError("");
+                      }
+                    }}
+                    className="w-full rounded-md border border-gray-300 p-3 focus:outline-none focus:ring-2 focus:ring-purple-400"
+                    placeholder="Age (10–120)"
+                  />
+                  {ageError ? (
+                    <p className="text-sm text-red-600 mt-1">{ageError}</p>
+                  ) : (
+                    <p className="text-sm text-gray-500 mt-1">
+                      Please enter a valid age between 10 and 120.
+                    </p>
+                  )}
+                </label>
+
+                {/* Weight input */}
+                <label className="block mb-4">
+                  <span className="text-gray-700 font-semibold mb-1 block">
+                    Weight (kg)
+                  </span>
+                  <input
+                    type="number"
+                    min={20}
+                    max={300}
+                    value={weight !== undefined ? weight : ""}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val === "") {
+                        setWeight(undefined);
+                      } else {
+                        const num = Number(val);
+                        if (!isNaN(num) && num >= 0 && num <= 400) {
+                          setWeight(num);
+                        }
+                      }
+                    }}
+                    onBlur={() => {
+                      if (weight && (weight < 20 || weight > 300)) {
+                        setWeightError("Weight must be between 20 and 300 kg.");
+                      } else {
+                        setWeightError("");
+                      }
+                    }}
+                    className="w-full rounded-md border border-gray-300 p-3 focus:outline-none focus:ring-2 focus:ring-purple-400"
+                    placeholder="Weight (20–300 kg)"
+                  />
+                  {weightError ? (
+                    <p className="text-sm text-red-600 mt-1">{weightError}</p>
+                  ) : (
+                    <p className="text-sm text-gray-500 mt-1">
+                      Weight should be between 20 and 300 kg.
+                    </p>
+                  )}
+                </label>
+
+                {/* Activity Level input */}
+                <label className="block mb-4">
+                  <span className="text-gray-700 font-semibold mb-1 block">
+                    Activity Level
+                  </span>
+                  <select
+                    value={activityLevel}
+                    onChange={(e) => setActivityLevel(e.target.value)}
+                    className="w-full rounded-md border border-gray-300 p-3 focus:outline-none focus:ring-2 focus:ring-purple-400"
+                  >
+                    <option value="">Select activity level</option>
+                    <option value="sedentary">
+                      Sedentary — little or no exercise
+                    </option>
+                    <option value="light">
+                      Light — exercise 1-3 days/week
+                    </option>
+                    <option value="moderate">
+                      Moderate — exercise 3-5 days/week
+                    </option>
+                    <option value="active">
+                      Active — exercise 6-7 days/week
+                    </option>
+                    <option value="very_active">
+                      Very Active — intense training or physical job
+                    </option>
+                  </select>
+                  <p className="text-sm text-gray-500 mt-1">
+                    Your activity level helps us calculate more accurate meal
+                    recommendations.
+                  </p>
+                </label>
+
+                {/* Diet input */}
+                <label className="block mb-6">
+                  <span className="text-gray-700 font-semibold mb-1 block">
+                    Diet Preference
+                  </span>
+                  <select
+                    value={diet}
+                    onChange={(e) => setDiet(e.target.value)}
+                    className="w-full rounded-md border border-gray-300 p-3 focus:outline-none focus:ring-2 focus:ring-purple-400"
+                  >
+                    <option value="">No preference</option>
+                    <option value="vegetarian">Vegetarian</option>
+                    <option value="vegan">Vegan</option>
+                    <option value="lactose_free">Lactose Intolerance</option>
+                    <option value="gluten_free">Gluten Free</option>
+                    <option value="keto">Keto</option>
+                  </select>
                 </label>
 
                 <button
@@ -471,7 +666,9 @@ export default function AccountPage() {
                 </div>
 
                 <label className="block mb-4">
-                  <span className="text-gray-700 font-semibold mb-1 block">New Email</span>
+                  <span className="text-gray-700 font-semibold mb-1 block">
+                    New Email
+                  </span>
                   <input
                     type="email"
                     value={newEmail}
@@ -482,7 +679,9 @@ export default function AccountPage() {
                 </label>
 
                 <label className="block mb-4">
-                  <span className="text-gray-700 font-semibold mb-1 block">Confirm New Email</span>
+                  <span className="text-gray-700 font-semibold mb-1 block">
+                    Confirm New Email
+                  </span>
                   <input
                     type="email"
                     value={confirmEmail}
@@ -493,7 +692,9 @@ export default function AccountPage() {
                 </label>
 
                 <label className="block mb-6">
-                  <span className="text-gray-700 font-semibold mb-1 block">Current Password</span>
+                  <span className="text-gray-700 font-semibold mb-1 block">
+                    Current Password
+                  </span>
                   <input
                     type="password"
                     value={currentPasswordForEmail}
@@ -520,7 +721,9 @@ export default function AccountPage() {
                 <h2 className="text-3xl font-semibold mb-6">Change Password</h2>
 
                 <label className="block mb-4">
-                  <span className="text-gray-700 font-semibold mb-1 block">Current Password</span>
+                  <span className="text-gray-700 font-semibold mb-1 block">
+                    Current Password
+                  </span>
                   <input
                     type="password"
                     value={currentPassword}
@@ -531,7 +734,9 @@ export default function AccountPage() {
                 </label>
 
                 <label className="block mb-4">
-                  <span className="text-gray-700 font-semibold mb-1 block">New Password</span>
+                  <span className="text-gray-700 font-semibold mb-1 block">
+                    New Password
+                  </span>
                   <input
                     type="password"
                     value={newPassword}
@@ -542,7 +747,9 @@ export default function AccountPage() {
                 </label>
 
                 <label className="block mb-6">
-                  <span className="text-gray-700 font-semibold mb-1 block">Confirm New Password</span>
+                  <span className="text-gray-700 font-semibold mb-1 block">
+                    Confirm New Password
+                  </span>
                   <input
                     type="password"
                     value={confirmPassword}
@@ -566,10 +773,12 @@ export default function AccountPage() {
 
             {activeSection === "delete" && (
               <>
-                <h2 className="text-3xl font-semibold mb-6 text-red-600">Delete Account</h2>
+                <h2 className="text-3xl font-semibold mb-6 text-red-600">
+                  Delete Account
+                </h2>
                 <p className="mb-6 text-gray-700">
-                  Warning: Deleting your account is permanent and cannot be undone.
-                  Please confirm below.
+                  Warning: Deleting your account is permanent and cannot be
+                  undone. Please confirm below.
                 </p>
 
                 <label className="flex items-center mb-6">
@@ -579,7 +788,9 @@ export default function AccountPage() {
                     onChange={(e) => setDeleteConfirmed(e.target.checked)}
                     className="mr-3"
                   />
-                  <span>I understand the consequences and want to delete my account.</span>
+                  <span>
+                    I understand the consequences and want to delete my account.
+                  </span>
                 </label>
 
                 <button

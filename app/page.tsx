@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import IngredientList from "./components/IngredientList";
 import RecipeCard from "./components/RecipeCard";
 import { useRouter } from "next/navigation";
-import NavBar from "./components/NavBar";
+import NavBar from "./components/Navbar";
 import { ArrowBigRight } from "lucide-react";
 
 type Recipe = {
@@ -37,7 +37,7 @@ export default function Home() {
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem("token");
     if (!token) {
       setShowLoginPrompt(true);
     }
@@ -108,11 +108,15 @@ export default function Home() {
       {showLoginPrompt && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60">
           <div className="bg-white rounded-xl shadow-lg p-8 max-w-md w-full text-center">
-            <h2 className="text-2xl font-bold mb-4 text-gray-800">Log in Required</h2>
-            <p className="mb-6 text-gray-600">You must be logged in to use this service.</p>
+            <h2 className="text-2xl font-bold mb-4 text-gray-800">
+              Log in Required
+            </h2>
+            <p className="mb-6 text-gray-600">
+              You must be logged in to use this service.
+            </p>
             <button
               className="bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition"
-              onClick={() => window.location.href = '/login'}
+              onClick={() => (window.location.href = "/login")}
             >
               Go to Login
             </button>
@@ -170,7 +174,7 @@ export default function Home() {
 
             <IngredientList
               ingredients={ingredients}
-              onRemoveIngredient={handleRemoveIngredient}
+              onRemoveIngredientAction={handleRemoveIngredient}
             />
 
             <div className="mt-8 space-y-6">
