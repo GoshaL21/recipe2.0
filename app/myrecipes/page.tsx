@@ -20,6 +20,27 @@ const Toast = ({ message, type, onClose }) => (
   </div>
 );
 
+// Decode JWT userId without external libs
+const getUserIdFromToken = (): number | null => {
+  try {
+    const token =
+      typeof window !== "undefined" ? localStorage.getItem("token") : null;
+    if (!token) return null;
+    const payload = JSON.parse(atob(token.split(".")[1] || ""));
+    const uid = payload?.userId;
+    return typeof uid === "number" ? uid : null;
+  } catch {
+    return null;
+  }
+};
+
+// Helper to get JWT auth headers
+const getAuthHeaders = () => {
+  const token =
+    typeof window !== "undefined" ? localStorage.getItem("token") : null;
+  return token ? { Authorization: `Bearer ${token}` } : {};
+};
+
 // Confirmation Modal component
 const ConfirmModal = ({ open, title, description, onConfirm, onCancel }) => {
   if (!open) return null;
@@ -63,13 +84,16 @@ const MyRecipes = () => {
     open: false,
     id: null,
   });
+  const [currentUserId, setCurrentUserId] = useState<number | null>(null);
 
-  // Redirect to login if not authenticated
+  // Redirect to login if not authenticated and set user id
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) {
       window.location.href = "/login";
+      return;
     }
+    setCurrentUserId(getUserIdFromToken());
   }, []);
 
   const handleShare = async (recipe) => {
@@ -102,11 +126,19 @@ const MyRecipes = () => {
     const id = confirm.id;
     if (!id) return;
     try {
-      const res = await fetch(`/api/recipes?id=${id}`, {
+      let res = await fetch(`/api/user/recipes?id=${id}`, {
         method: "DELETE",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...getAuthHeaders() },
         credentials: "include",
       });
+      // Fallback to legacy route if the user-scoped route isn't available
+      if (res.status === 404 || res.status === 405) {
+        res = await fetch(`/api/recipes?id=${id}`, {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+          credentials: "include",
+        });
+      }
       if (!res.ok) {
         let msg = "Failed to delete";
         try {
@@ -130,20 +162,35 @@ const MyRecipes = () => {
   useEffect(() => {
     const fetchRecipes = async () => {
       try {
-        const response = await fetch("/api/recipes", {
+        let response = await fetch("/api/user/recipes", {
           method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json", ...getAuthHeaders() },
           credentials: "include",
         });
-
-        if (!response.ok) {
-          throw new Error("Failed to fetch recipes");
+        if (response.status === 404 || response.status === 405) {
+          // Fallback to legacy all-recipes route
+          response = await fetch("/api/recipes", {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              ...getAuthHeaders(),
+            },
+            credentials: "include",
+          });
         }
-
+        if (!response.ok) {
+          const text = await response.text();
+          throw new Error(text || "Failed to fetch recipes");
+        }
         const data = await response.json();
-        setRecipes(data);
+        const uid = currentUserId ?? getUserIdFromToken();
+        const mine =
+          Array.isArray(data) && uid != null
+            ? data.filter((r) => r.userId === uid)
+            : Array.isArray(data)
+              ? data
+              : [];
+        setRecipes(mine);
       } catch (error) {
         console.error("Error fetching recipes:", error);
       } finally {
@@ -152,7 +199,7 @@ const MyRecipes = () => {
     };
 
     fetchRecipes();
-  }, []);
+  }, [currentUserId]);
 
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString("en-US", {
