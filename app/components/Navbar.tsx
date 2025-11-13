@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import React from 'react';
-import { useRouter } from 'next/navigation';
+import React from "react";
+import { useRouter } from "next/navigation";
 
 export default function Navbar() {
   const router = useRouter();
@@ -9,15 +9,15 @@ export default function Navbar() {
   const [isLoading, setIsLoading] = React.useState(true);
 
   React.useEffect(() => {
-    const storedToken = localStorage.getItem('token');
+    const storedToken = localStorage.getItem("token");
     setToken(storedToken);
     setIsLoading(false);
   }, []);
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
+    localStorage.removeItem("token");
     setToken(null);
-    router.push('/');
+    router.push("/");
   };
 
   if (isLoading) {
@@ -28,7 +28,7 @@ export default function Navbar() {
           <div className="flex justify-between h-16">
             <div className="flex items-center">
               <button
-                onClick={() => router.push('/')}
+                onClick={() => router.push("/")}
                 className="text-xl font-bold text-purple-600"
                 aria-label="Go to home"
               >
@@ -52,7 +52,7 @@ export default function Navbar() {
           <div className="flex items-center">
             {/* Changed from span to button for clickable logo */}
             <button
-              onClick={() => router.push('/')}
+              onClick={() => router.push("/")}
               className="text-xl font-bold text-purple-600"
               aria-label="Go to home"
             >
@@ -62,14 +62,20 @@ export default function Navbar() {
           <div className="flex items-center space-x-4">
             {token ? (
               <>
-              <button
-                  onClick={() => router.push('/myrecipes')}
+                <button
+                  onClick={() => router.push("/meal-planner")}
+                  className="px-4 py-2 rounded-md text-purple-600 hover:bg-purple-50 transition-colors duration-200 font-medium"
+                >
+                  Meal Planner
+                </button>
+                <button
+                  onClick={() => router.push("/myrecipes")}
                   className="px-4 py-2 rounded-md text-purple-600 hover:bg-purple-50 transition-colors duration-200 font-medium"
                 >
                   My Recipes
                 </button>
                 <button
-                  onClick={() => router.push('/account')}
+                  onClick={() => router.push("/account")}
                   className="px-4 py-2 rounded-md text-purple-600 hover:bg-purple-50 transition-colors duration-200 font-medium"
                 >
                   My Account
@@ -84,13 +90,13 @@ export default function Navbar() {
             ) : (
               <>
                 <button
-                  onClick={() => router.push('/login')}
+                  onClick={() => router.push("/login")}
                   className="px-4 py-2 rounded-md text-purple-600 hover:bg-purple-50 transition-colors duration-200 font-medium"
                 >
                   Log In
                 </button>
                 <button
-                  onClick={() => router.push('/signup')}
+                  onClick={() => router.push("/signup")}
                   className="px-4 py-2 rounded-md bg-purple-600 text-white hover:bg-purple-700 transition-colors duration-200 font-medium shadow-sm"
                 >
                   Sign Up

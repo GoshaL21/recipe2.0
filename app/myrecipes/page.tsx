@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from "react";
 import { Clock, DollarSign, ChefHat, X } from "lucide-react";
 import Navbar from "../components/Navbar";
-
 // Simple Toast component
 const Toast = ({ message, type, onClose }) => (
   <div
