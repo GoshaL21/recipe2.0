@@ -69,6 +69,12 @@ export default function Navbar() {
                   Meal Planner
                 </button>
                 <button
+                  onClick={() => router.push("/chat")}
+                  className="px-4 py-2 rounded-md text-purple-600 hover:bg-purple-50 transition-colors duration-200 font-medium"
+                >
+                  Chat
+                </button>
+                <button
                   onClick={() => router.push("/myrecipes")}
                   className="px-4 py-2 rounded-md text-purple-600 hover:bg-purple-50 transition-colors duration-200 font-medium"
                 >
