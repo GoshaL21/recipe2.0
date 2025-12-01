@@ -72,3 +72,26 @@ export async function PUT(req: Request) {
     );
   }
 }
+
+export async function DELETE(req: Request) {
+  const userId = getUserIdFromAuthHeader(req);
+  if (!userId) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  try {
+    await prisma.currentMealPlan.delete({
+      where: { userId },
+    });
+    return NextResponse.json({ success: true }, { status: 200 });
+  } catch (e: any) {
+    // If record does not exist, treat as success to keep UX simple
+    if (e?.code === "P2025") {
+      return NextResponse.json({ success: true }, { status: 200 });
+    }
+    return NextResponse.json(
+      { error: e?.message || "Failed to delete current meal plan" },
+      { status: 500 },
+    );
+  }
+}

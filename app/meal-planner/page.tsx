@@ -70,6 +70,7 @@ export default function MealPlannerPage() {
   const [plansByDay, setPlansByDay] = useState<Record<number, PlanResponse>>(
     {},
   );
+  const [isCurrentPlan, setIsCurrentPlan] = useState(false);
 
   // Prefill from /api/user if logged in
   useEffect(() => {
@@ -125,6 +126,7 @@ export default function MealPlannerPage() {
         if (data?.currentPlan) {
           const savedPlan = data.currentPlan as PlanResponse;
           setPlan(savedPlan);
+          setIsCurrentPlan(true);
           setPlansByDay((prev) => ({
             ...prev,
             1: savedPlan,
@@ -193,6 +195,7 @@ export default function MealPlannerPage() {
         [day]: data,
       }));
       setPlan(data);
+      setIsCurrentPlan(false);
     } catch (e: any) {
       setError(e?.message || "Failed to generate plan");
     } finally {
@@ -203,11 +206,13 @@ export default function MealPlannerPage() {
   const handleInitialGenerate = () => {
     if (!validateInputs()) return;
     setCurrentDay(1);
+    setIsCurrentPlan(false);
     fetchPlanForDay(1, true);
   };
 
   const handleRegenerate = () => {
     if (!validateInputs()) return;
+    setIsCurrentPlan(false);
     fetchPlanForDay(currentDay, true);
   };
 
@@ -215,6 +220,7 @@ export default function MealPlannerPage() {
     if (nextDay < 1 || nextDay > 7) return;
     if (!validateInputs()) return;
     setCurrentDay(nextDay);
+    setIsCurrentPlan(false);
     fetchPlanForDay(nextDay, false);
   };
 
@@ -319,10 +325,45 @@ export default function MealPlannerPage() {
         throw new Error(txt || "Failed to save current meal plan.");
       }
 
+      setIsCurrentPlan(true);
       showToast("Current meal plan saved.", "success");
     } catch (e: any) {
       setError(e?.message || "Failed to save current meal plan.");
       showToast("Failed to save current meal plan.", "error");
+    }
+  };
+
+  const handleDeleteCurrent = async () => {
+    try {
+      if (typeof window === "undefined") return;
+
+      const token = localStorage.getItem("token");
+      if (!token) {
+        showToast("You need to be logged in to delete current meal plan.", "error");
+        return;
+      }
+
+      const res = await fetch("/api/meal-planner/current", {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!res.ok) {
+        const txt = await res.text();
+        throw new Error(txt || "Failed to delete current meal plan.");
+      }
+
+      // Clear UI state
+      setPlan(null);
+      setPlansByDay({});
+      setCurrentDay(1);
+      setIsCurrentPlan(false);
+      showToast("Current meal plan deleted.", "success");
+    } catch (e: any) {
+      setError(e?.message || "Failed to delete current meal plan.");
+      showToast("Failed to delete current meal plan.", "error");
     }
   };
 
@@ -496,13 +537,23 @@ export default function MealPlannerPage() {
                 >
                   {isLoading ? "Regenerating..." : "Regenerate meals"}
                 </button>
-                <button
-                  onClick={handleSetAsCurrent}
-                  disabled={isLoading}
-                  className="px-4 py-2 rounded-lg border border-green-500 text-green-700 font-medium hover:bg-green-50 disabled:opacity-60 disabled:cursor-not-allowed"
-                >
-                  Set as current meal plan
-                </button>
+                {isCurrentPlan ? (
+                  <button
+                    onClick={handleDeleteCurrent}
+                    disabled={isLoading}
+                    className="px-4 py-2 rounded-lg border border-red-500 text-red-700 font-medium hover:bg-red-50 disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
+                    Delete current plan
+                  </button>
+                ) : (
+                  <button
+                    onClick={handleSetAsCurrent}
+                    disabled={isLoading}
+                    className="px-4 py-2 rounded-lg border border-green-500 text-green-700 font-medium hover:bg-green-50 disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
+                    Set as current meal plan
+                  </button>
+                )}
               </div>
             </div>
 
