@@ -40,65 +40,6 @@ export default function ChatPage() {
     }
   }, [messages]);
 
-  // On mount, try to load the most recent saved chat session (if user is logged in)
-  useEffect(() => {
-    const loadLastSession = async () => {
-      try {
-        if (typeof window === "undefined") return;
-
-        // Prepare headers with JWT if available
-        let headers: HeadersInit = { "Content-Type": "application/json" };
-        const token = localStorage.getItem("token");
-        if (!token) {
-          // Not logged in → no DB-backed history
-          return;
-        }
-        headers = {
-          ...headers,
-          Authorization: `Bearer ${token}`,
-        };
-
-        // 1) Get all sessions (backend returns them sorted by updatedAt desc)
-        const res = await fetch("/api/chat/sessions", {
-          method: "GET",
-          headers,
-          credentials: "include",
-        });
-
-        if (!res.ok) return;
-
-        const sessions = await res.json();
-        if (!Array.isArray(sessions) || sessions.length === 0) return;
-
-        const latest = sessions[0]; // most recent chat session
-
-        // 2) Load messages for that session
-        const res2 = await fetch(`/api/chat/session?id=${latest.id}`, {
-          method: "GET",
-          headers,
-          credentials: "include",
-        });
-
-        if (!res2.ok) return;
-
-        const data = await res2.json();
-
-        if (Array.isArray(data.messages)) {
-          setMessages(
-            data.messages.map((m: any) => ({
-              role: m.role === "assistant" ? "assistant" : "user",
-              content: m.content,
-            })),
-          );
-          setSessionId(data.id);
-        }
-      } catch (e) {
-        console.error("Failed to load last chat session", e);
-      }
-    };
-
-    loadLastSession();
-  }, []);
 
   const fetchSessions = async () => {
     try {
@@ -645,7 +586,7 @@ export default function ChatPage() {
               <div className="flex gap-2">
                 <textarea
                   className="flex-1 min-h-[60px] max-h-40 border rounded-xl p-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400"
-                  placeholder="Example: Is this breakfast okay for my goal to lose weight? Or: Can you help me adjust my dinner to be higher in protein?"
+                  placeholder="Example: Is it okay to eat late at night?"
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={handleKeyDown}
