@@ -33,6 +33,32 @@ const PANTRY_ITEMS = [
 
 const PANTRY_SET = new Set(PANTRY_ITEMS.map((s) => s.toLowerCase()));
 
+// Price-tier guidance (since real prices vary by location)
+const PREMIUM_INGREDIENT_KEYWORDS = [
+  "steak",
+  "ribeye",
+  "tenderloin",
+  "wagyu",
+  "duck",
+  "lamb",
+  "lobster",
+  "scallops",
+  "caviar",
+  "truffle",
+  "saffron",
+  "prosciutto",
+  "parmesan",
+  "burrata",
+  "goat cheese",
+  "prawns",
+  "shrimp",
+  "salmon",
+  "tuna steak",
+  "avocado",
+  "pine nuts",
+  "macadamia",
+];
+
 // ---- Lightweight nutrition calculator (per 100g or per piece for some items) ----
 // Values are approximate; replace with external API later if desired.
 // calories (kcal), protein (g), fat (g), carbs (g)
@@ -513,12 +539,16 @@ export async function POST(req: Request) {
       maxPrepTime,
       maxBudget,
       dietaryPreference,
+      priceTier,
+      avoidPremium,
     } = body as {
       ingredients: string[];
       cookingLevel: string;
       maxPrepTime: number;
-      maxBudget: number;
+      maxBudget?: number;
       dietaryPreference?: string;
+      priceTier?: "off" | "budget" | "mid" | "premium";
+      avoidPremium?: boolean;
     };
 
     if (!Array.isArray(ingredients) || ingredients.length === 0) {
@@ -527,11 +557,7 @@ export async function POST(req: Request) {
         { status: 400 },
       );
     }
-    if (
-      !cookingLevel ||
-      typeof maxPrepTime !== "number" ||
-      typeof maxBudget !== "number"
-    ) {
+    if (!cookingLevel || typeof maxPrepTime !== "number") {
       return NextResponse.json(
         { error: "Invalid input parameters." },
         { status: 400 },
@@ -542,6 +568,20 @@ export async function POST(req: Request) {
       dietaryPreference && dietaryPreference !== "none"
         ? `The recipes must be ${dietaryPreference}.`
         : "";
+
+    const tier = priceTier ?? "off";
+    const avoidPremiumText = avoidPremium
+      ? `Additionally, avoid premium/luxury ingredients.`
+      : "";
+
+    const budgetText =
+      tier === "off"
+        ? "Budget is OFF: do not optimize for price."
+        : tier === "budget"
+          ? `Budget tier is CHEAPER: prefer everyday affordable ingredients (e.g., eggs, oats, rice, pasta, beans, lentils, seasonal vegetables, chicken thighs/breast). Avoid luxury/premium items such as: ${PREMIUM_INGREDIENT_KEYWORDS.join(", ")}.`
+          : tier === "mid"
+            ? `Budget tier is MEDIUM: allow common-to-moderate ingredients; avoid heavy luxury items such as: ${PREMIUM_INGREDIENT_KEYWORDS.join(", ")}.`
+            : `Budget tier is MORE EXPENSIVE: you may include premium ingredients and delicacies (e.g., seafood, quality cheeses, steak), but keep it reasonable and coherent.`;
 
     // ---- Prompt with explicit rules to fix issues (1)-(3) ----
     const prompt = `You are a professional chef creating recipes based on available ingredients.
@@ -554,13 +594,14 @@ Generate exactly 3 different recipes; do not return fewer or more.
 Hard requirements:
 - Cooking level: ${cookingLevel}
 - Maximum preparation time: ${maxPrepTime} minutes
-- Maximum budget: $${maxBudget}
+- Budget guidance: ${budgetText} ${avoidPremiumText}
 ${dietaryText}
 
 Output rules (CRITICAL):
 1) Use at least one relevant provided ingredient per recipe. You may ignore provided ingredients that are not needed. Only list used provided ingredients under "ingredients.provided"; do not include unused provided items anywhere.
 2) Do NOT include pantry items (${PANTRY_ITEMS.join(", ")}) in either list unless a specific non-pantry variant is required (e.g., "smoked paprika").
 3) Keep "ingredients.additional" minimal (at most 3 items), common and inexpensive; remove anything non-essential.
+3b) Respect the budget guidance: for CHEAPER and MEDIUM tiers, do not include luxury/premium ingredients. For MORE EXPENSIVE tier, premium ingredients are allowed.
 4) Every item listed in either ingredients list MUST be referenced in the instructions. If instructions require a non‑pantry item and the user provided it, it belongs in "ingredients.provided"; otherwise put it in "ingredients.additional".
 5) Provide explicit measurements for every listed ingredient (grams / tbsp / cups) so nutrition can be calculated.
 

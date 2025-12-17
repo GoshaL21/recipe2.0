@@ -32,7 +32,8 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [cookingLevel, setCookingLevel] = useState<string>("intermediate");
   const [maxPrepTime, setMaxPrepTime] = useState<number>(60);
-  const [maxBudget, setMaxBudget] = useState<number>(50);
+  const [priceTier, setPriceTier] = useState<"off" | "budget" | "mid" | "premium">("off");
+  const [avoidPremium, setAvoidPremium] = useState<boolean>(false);
   const [dietaryPreference, setDietaryPreference] = useState<string>("none");
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
 
@@ -76,8 +77,9 @@ export default function Home() {
           ingredients,
           cookingLevel,
           maxPrepTime,
-          maxBudget,
           dietaryPreference,
+          priceTier,
+          avoidPremium,
         }),
       });
 
@@ -248,24 +250,32 @@ export default function Home() {
 
                 <div>
                   <label
-                    htmlFor="maxBudget"
+                    htmlFor="priceTier"
                     className="block text-sm font-medium text-gray-700 mb-2"
                   >
-                    Max Budget ($)
+                    Budget
                   </label>
-                  <input
-                    type="number"
-                    id="maxBudget"
-                    value={maxBudget}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      setMaxBudget(
-                        val === "" ? 0 : Math.max(0, parseFloat(val) || 0),
-                      );
-                    }}
-                    min="0"
+                  <select
+                    id="priceTier"
+                    value={priceTier}
+                    onChange={(e) => setPriceTier(e.target.value as any)}
                     className="w-full p-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  />
+                  >
+                    <option value="off">Off (don’t consider price)</option>
+                    <option value="budget">Cheaper</option>
+                    <option value="mid">Medium</option>
+                    <option value="premium">More expensive</option>
+                  </select>
+
+                  <label className="mt-3 flex items-center gap-2 text-sm text-gray-700">
+                    <input
+                      type="checkbox"
+                      checked={avoidPremium}
+                      onChange={(e) => setAvoidPremium(e.target.checked)}
+                      className="h-4 w-4"
+                    />
+                    Avoid premium ingredients
+                  </label>
                 </div>
               </div>
             </div>
