@@ -2,6 +2,12 @@
 
 import { useEffect, useState } from "react";
 import Navbar from "../components/Navbar";
+import {
+  buildShoppingListForPlan,
+  formatShoppingLine,
+  type ShoppingLine,
+} from "./shoppingListUtils";
+import { downloadShoppingListPdf } from "./pdf";
 
 type Meal = {
   name: string;
@@ -41,6 +47,7 @@ const dietOptions = [
   { value: "keto", label: "Keto" },
 ];
 
+
 const goalOptions = [
   { value: "lose", label: "Lose Weight" },
   { value: "maintain", label: "Maintain / Keep Form" },
@@ -48,6 +55,7 @@ const goalOptions = [
   { value: "eat_healthy", label: "Just Eat Healthy" },
   { value: "recomp", label: "Body Recomposition" },
 ];
+
 
 export default function MealPlannerPage() {
   const [age, setAge] = useState<number>(25);
@@ -71,6 +79,7 @@ export default function MealPlannerPage() {
     {},
   );
   const [isCurrentPlan, setIsCurrentPlan] = useState(false);
+  const [shoppingOpen, setShoppingOpen] = useState(false);
 
   // Prefill from /api/user if logged in
   useEffect(() => {
@@ -207,12 +216,14 @@ export default function MealPlannerPage() {
     if (!validateInputs()) return;
     setCurrentDay(1);
     setIsCurrentPlan(false);
+    setShoppingOpen(false);
     fetchPlanForDay(1, true);
   };
 
   const handleRegenerate = () => {
     if (!validateInputs()) return;
     setIsCurrentPlan(false);
+    setShoppingOpen(false);
     fetchPlanForDay(currentDay, true);
   };
 
@@ -221,6 +232,7 @@ export default function MealPlannerPage() {
     if (!validateInputs()) return;
     setCurrentDay(nextDay);
     setIsCurrentPlan(false);
+    setShoppingOpen(false);
     fetchPlanForDay(nextDay, false);
   };
 
@@ -360,12 +372,16 @@ export default function MealPlannerPage() {
       setPlansByDay({});
       setCurrentDay(1);
       setIsCurrentPlan(false);
+      setShoppingOpen(false);
       showToast("Current meal plan deleted.", "success");
     } catch (e: any) {
       setError(e?.message || "Failed to delete current meal plan.");
       showToast("Failed to delete current meal plan.", "error");
     }
   };
+
+  // --- Derived shopping list for current day ---
+  const shoppingList: ShoppingLine[] = buildShoppingListForPlan(plan);
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 pb-12">
@@ -558,14 +574,88 @@ export default function MealPlannerPage() {
             </div>
 
             <div className="bg-white rounded-2xl shadow p-6 mb-6">
-              <h2 className="text-2xl font-bold mb-3">Daily Targets</h2>
-              <p className="text-gray-700">
-                Calories:{" "}
-                <strong>{Math.round(plan.targetCalories)} kcal</strong> •
-                Protein: <strong>{Math.round(plan.proteinTarget)} g</strong> •
-                Fat: <strong>{Math.round(plan.fatTarget)} g</strong> • Carbs:{" "}
-                <strong>{Math.round(plan.carbTarget)} g</strong>
-              </p>
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <h2 className="text-2xl font-bold mb-3">Daily Targets</h2>
+                  <div className="text-gray-700">
+                    <div>
+                      Calories: <strong>{Math.round(plan.targetCalories)} kcal</strong> •
+                      Protein: <strong>{Math.round(plan.proteinTarget)} g</strong>
+                    </div>
+                    <div className="mt-1">
+                      Fat: <strong>{Math.round(plan.fatTarget)} g</strong> •
+                      Carbs: <strong>{Math.round(plan.carbTarget)} g</strong>
+                    </div>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setShoppingOpen((v) => !v)}
+                  className="px-4 py-2 rounded-lg border border-purple-400 text-purple-700 font-medium hover:bg-purple-50"
+                >
+                  {shoppingOpen ? "Hide shopping list" : "Shopping list"}
+                </button>
+              </div>
+
+              {shoppingOpen && (
+                <div className="mt-4 pt-4 border-t">
+                  <h3 className="text-lg font-semibold mb-2">Shopping list (Day {currentDay})</h3>
+                  {shoppingList.length ? (
+                    <ul className="list-disc ml-5 text-sm text-gray-700 space-y-1">
+                      {shoppingList.map((item, idx) => (
+                        <li key={`${item.name}-${item.unit}-${idx}`}>{formatShoppingLine(item)}</li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-sm text-gray-600">No shopping items for this day.</p>
+                  )}
+                  <div className="mt-4 flex flex-wrap gap-3">
+                    <button
+                      type="button"
+                      className="px-4 py-2 rounded-lg border border-purple-400 text-purple-700 font-medium hover:bg-purple-50"
+                      onClick={async () => {
+                        try {
+                          const lines = shoppingList.map((x) => formatShoppingLine(x));
+                          const text = [`Shopping list (Day ${currentDay})`, "", ...lines].join("\n");
+
+                          if (navigator.clipboard?.writeText) {
+                            await navigator.clipboard.writeText(text);
+                            showToast("Shopping list copied", "success");
+                          } else {
+                            // Fallback
+                            window.prompt("Copy your shopping list:", text);
+                          }
+                        } catch {
+                          showToast("Failed to copy shopping list", "error");
+                        }
+                      }}
+                    >
+                      Copy shopping list
+                    </button>
+
+                    <button
+                      type="button"
+                      className="px-4 py-2 rounded-lg border border-blue-500 text-blue-600 font-medium hover:bg-blue-50"
+                      onClick={async () => {
+                        try {
+                          const title = `Shopping list (Day ${currentDay})`;
+                          const filename = `shopping-list-day-${currentDay}.pdf`;
+                          await downloadShoppingListPdf({ title, lines: shoppingList, filename });
+                          showToast("PDF downloaded", "success");
+                        } catch {
+                          showToast("Failed to generate PDF", "error");
+                        }
+                      }}
+                    >
+                      Download PDF
+                    </button>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-3">
+                    Note: salt/pepper/oils and similar pantry items are excluded.
+                  </p>
+                </div>
+              )}
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
