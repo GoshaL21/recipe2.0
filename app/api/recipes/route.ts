@@ -628,7 +628,7 @@ Return a JSON object exactly in this schema:
 }`;
 
     const completion = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
+      model: "gpt-4o-mini",
       messages: [{ role: "user", content: prompt }],
       response_format: { type: "json_object" },
       temperature: 0.7,
@@ -661,7 +661,7 @@ Return a JSON object exactly in this schema:
         prompt +
         "\nIMPORTANT: Return exactly 3 different recipes in the JSON array.";
       const retry = await openai.chat.completions.create({
-        model: "gpt-3.5-turbo",
+        model: "gpt-4o-mini",
         messages: [{ role: "user", content: retryPrompt }],
         response_format: { type: "json_object" },
         temperature: 0.7,
